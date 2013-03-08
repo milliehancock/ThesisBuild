@@ -1,12 +1,41 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>title</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="script.js"></script>
-  </head>
-  <body>
-    <!-- page content -->
-  </body>
+<html>
+<head>
+	<!--this tells the browser how to render the charset-->	
+	<meta charset="UTF-8">
+	
+	<!--this lets the application know to not convert strings of numerics to phone numbers/links-->
+	<meta name="format-detection" content="telephone-no">
+	
+	<!--this makes the application behave more like a mobile app i.e., no scalability -->
+	<meta name="viewport" content="user-scalable=no, initial-scale=1, minimum-scale=1, maximum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi">
+	
+	<!--this isn't viewable to the user, will specify the name of the application in the PhoneGap configuration files-->
+	<title> Our Application </title>
+	
+	<!--this links to the stylesheet-->
+	<link rel="stylesheet" href="css/main.css">
+	
+	<!--open script block... not sure what this means exactly-->
+	<script src="cordova.ios.js"></script>
+	
+	<!--this is a new script block for the scripts  I want to create-->
+	<script>
+		function init() {
+			document.addEventListener("deviceready", onDeviceReady, false);
+			}
+		function onDeviceReady() {
+			alert ('It works!');
+			}
+			
+		}
+	</script>
+	
+</head>
+<body onload="init()">
+
+	<!--this is a placeholder for our content-->
+	<div>Placeholder</div>
+</body>
 </html>
+	
