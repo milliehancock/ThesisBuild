@@ -57,4 +57,11 @@
     </plugins>
 
     <access origin="*" />
+    
+    
+    <access origin="http://*.google.com" />
+    <access origin="http://*.googleapis.com" />
+    <access origin="http://*.gstatic.com" />
+    
+    
 </cordova>
