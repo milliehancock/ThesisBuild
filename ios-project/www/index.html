@@ -1,39 +1,53 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<!--this tells the browser how to render the charset-->	
+	<!--this metadata makes the app behave more like a mobile app-->	
 	<meta charset="UTF-8">
-	
-	<!--this lets the application know to not convert strings of numerics to phone numbers/links-->
 	<meta name="format-detection" content="telephone-no">
-	
-	<!--this makes the application behave more like a mobile app i.e., no scalability -->
 	<meta name="viewport" content="user-scalable=no, initial-scale=1, minimum-scale=1, maximum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi">
 	
 	<!--this isn't viewable to the user, will specify the name of the application in the PhoneGap configuration files-->
 	<title> Our Application </title>
 	
-	<!--this links to the stylesheet-->
+	<!--stylesheet links-->
+	<link rel="stylesheet" href="css/themes/default/jquery.mobile-1.3.0.css">
 	<link rel="stylesheet" href="css/main.css">
 	
-	<!--open script block... not sure what this means exactly-->
+	<!--script file references-->
+	<script src="js/jquery.js"></script>
+	<script src="js/jquery.mobile-1.3.0.js"></script>
 	<script src="cordova.ios.js"></script>
+	<script src="js/mustache.js"></script>
 	
-	<!--this is a new script block for the scripts  I want to create-->
+	<!--scripts I create-->
 	<script>
+		var notedata = {notetitle:"", notedetail:"", imagesource:"", notelat:"", notelon:""};
+		var notetemplate = '<input type="text" name="notetitle" id="notetitle" value="{{notetitle}}" placeholder="Note Title"/><textarea cols="40" rows="8" name="notedetail" id="notedetail" placeholder="Note Detail">{{notedetail}}</textarea><input id="addphoto" type="button" data-icon="plus" value="Add a Photo" /><img id="noteimage" src="{{imagesource}}" /><div id="map">Map Placeholder</div><input id="savenote" type="button" data-theme="a" value="Save Note" />';
+		
+		$(document).on("pageinit", function(){
+			$("#newnote").live("pagecreate", function(){
+				var html = Mustache.to_html(notetemplate, notedata);
+				$("#notedetailcontent").html(html);
+			});
+		});
+
 		function init() {
 			document.addEventListener("deviceready", onDeviceReady, false);
-			}
-		function onDeviceReady() {
-			alert ('It works!');
-			}
-			
 		}
+
+		function onDeviceReady() {
+			alert('It works!');
+		}
+		
 	</script>
 	
 </head>
+
+
+
 <body onload="init()">
 
+	<!--you can either spec different pages within the body, like here, or make separate html files for each-->
 	<!--this is the main page-->
 	<div data-role="page" id="main">
 	<div data-role="header" class="logo">
