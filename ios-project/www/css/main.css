@@ -2,13 +2,19 @@
 	text-align: center;
 }
 
-.offline{
+.offline {
 	visibility: hidden;
 	color: #f00;
 	font-style: italic;
 }
 
-#map{
+#map {
 	width: 100%;
 	height: 200px;
+}
+
+#noteimage {
+	width: 200px;
+	height: 200px;
+	display: none;
 }

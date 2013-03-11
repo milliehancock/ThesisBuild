@@ -1,124 +1,196 @@
 <!DOCTYPE html>
 <html>
-<head>
-	<!--this metadata makes the app behave more like a mobile app-->	
-	<meta charset="UTF-8">
-	<meta name="format-detection" content="telephone-no">
-	<meta name="viewport" content="user-scalable=no, initial-scale=1, minimum-scale=1, maximum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi">
-	
-	<!--this isn't viewable to the user, will specify the name of the application in the PhoneGap configuration files-->
-	<title> Our Application </title>
-	
-	<!--stylesheet links-->
-	<link rel="stylesheet" href="css/themes/default/jquery.mobile-1.3.0.css">
-	<link rel="stylesheet" href="css/main.css">
-	
-	<!--script file references-->
-	<script src="js/jquery.js"></script>
-	<script src="js/jquery.mobile-1.3.0.js"></script>
-	<script src="cordova.ios.js"></script>
-	<script src="js/mustache.js"></script>
-	<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
-	<link href="http://code.google.com/apis/maps/documentation/javascript/examples/default.css" rel="stylesheet" type="text/css" />
-	
-	<!--global variables; scripts I create-->
-	<script>
-		var lat, lon;
-		var notedata = {notetitle:"", notedetail:"", imagesource:"", notelat:"", notelon:""};
-		var notetemplate = '<input type="text" name="notetitle" id="notetitle" value="{{notetitle}}" placeholder="Note Title"/><textarea cols="40" rows="8" name="notedetail" id="notedetail" placeholder="Note Detail">{{notedetail}}</textarea><input id="addphoto" type="button" data-icon="plus" value="Add a Photo" /><img id="noteimage" src="{{imagesource}}" /><div id="map">Map Placeholder</div><input id="savenote" type="button" data-theme="a" value="Save Note" />';
-		
-		$(document).on("pageinit", function(){
-       
-			$("#newnote").live("pagecreate", function(){
-				var html = Mustache.to_html(notetemplate, notedata);
-				$("#notedetailcontent").html(html);
-			});
-			
-			$("#newnote").live("pageshow", function(){
-				navigator.geolocation.getCurrentPosition(onGeoSuccess, onGeoError);
-			})
-		});
-
-		function init() {
-			document.addEventListener("deviceready", onDeviceReady, false);
-		}
-
-		function onDeviceReady() {
-			//alert('It works!');
-			var networkstate = navigator.connection.type;
-			if(networkstate == "none")
-			{
-				$(".offline").css("visibility","visible");
+    <head>
+        
+        <!--this metadata makes the app behave more like a mobile app-->	
+        <meta charset="UTF-8">
+        <meta name="format-detection" content="telephone-no">
+        <meta name="viewport" content="user-scalable=no, initial-scale=1, minimum-scale=1, maximum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi">
+        
+        <!--this isn't viewable to the user, will specify the name of the application in the PhoneGap configuration files-->
+        <title>Our Application</title>
+        
+        <!--stylesheet links-->
+        <link rel="stylesheet" href="css/themes/default/jquery.mobile-1.2.0.css">
+        <link rel="stylesheet" href="css/main.css">
+        
+        <!--script file references-->
+        <script src="js/jquery.js"></script>
+        <script src="js/jquery.mobile-1.2.0.js"></script>
+        <script src="cordova.ios.js"></script>
+        <script src="js/mustache.js"></script>
+        <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
+        <link href="http://code.google.com/apis/maps/documentation/javascript/examples/default.css" rel="stylesheet" type="text/css" />
+        
+        <!--global variables; scripts I create-->
+        <script>
+        	//this is for the database and geolocation
+        	var db, dbresults, itemindex, lat, lon;
+        	//this is for the data that populates the notetemplate
+            var notedata = {notetitle:"", notedetail:"", imagesource:"", notelat:"", notelon:""};
+            //this is mustache.js, which is a template, which is populated with the notedata
+            var notetemplate = '<input type="text" name="notetitle" id="notetitle" value="{{notetitle}}" placeholder="Note Title"/><textarea cols="40" rows="8" name="notedetail" id="notedetail" placeholder="Note Detail">{{notedetail}}</textarea><input id="addphoto" type="button" data-icon="plus" value="Add a Photo" /><img id="noteimage" src="{{imagesource}}" /><div id="map">Map Placeholder</div><input id="savenote" type="button" data-theme="a" value="Save Note" />';
+            
+            //when the page loads, do this stuff...this is like void setup?
+            $(document).on("pageinit", function(){
+            	
+            	//create the template, populate html with the mustache template, etc.
+            	$('#newnote').live('pagecreate', function(event){
+	            	if(itemindex >= 0) {
+		            	item = dbresults.rows.item(itemindex);
+		            	notedata = {notetitle:item.notetitle, notedetail:item.notedetail, imagesource:item.imagesource, notelat:item.notelat, notelon:item.notelon};
+		            }  
+		            var html = Mustache.to_html(notetemplate, notedata);
+		            $("#notedetailcontent").html(html);
+		        }); 
+                
+                //listen for the new note, find geolocation, and update position of the map navigator to current location -- also executes two functions to see if geolocation is available
+                $("#newnote").live("pageshow", function(){
+                	navigator.geolocation.getCurrentPosition(onGeoSuccess, onGeoError);
+                	if(itemindex >= 0){
+	                	$("#noteimage").css("display", "block");
+                	}
+                });
+                
+                //listens for the add photo button to be tapped and navigates to the photo library in the phone
+                $("#addphoto").bind("tap", function(){
+                	var options = {sourceType:Camera.PictureSourceType.PHOTOLIBRARY, destinationType: Camera.DestinationType.FILE_URI};
+                    navigator.camera.getPicture(onCameraSuccess, onError, options);
+                });
+                
+                //upon tap, this pulls all of the data from the forms and saves to the database
+                $("#savenote").bind("tap", function(){
+					notedata.notetitle = $("#notetitle").val();
+					notedata.notedetail = $("#notedetail").val();
+					notedata.imagesource =  $("#noteimage").attr("src");
+					notedata.notelat = lat;
+					notedata.notelon = lon;
+					db.transaction(saveNote, onDbError, onDbSuccess);
+				});
+            });
+                                
+           
+            //look up init function so you know what this does...
+            function init() {
+            	document.addEventListener("deviceready", onDeviceReady, false);
+            }
+                                
+            //function to see if the device is on. if not, css changes to reflect 'offline' state
+            function onDeviceReady() {
+            	var networkstate = navigator.connection.type;
+                if(networkstate == "none"){
+                	$(".offline").css("visibility","visible");
+                }
+                //this creates the database. takes 4 parameters: name, version, display name, and size 
+                db = window.openDatabase("Notes", "1.0", "Saved Notes", 200000);
+                //this lets us perform transactions upon the database. takes 3 parameters: SQL calls that get the notes, performs a function upon error and success
+                db.transaction(getDbNotes, onDbError, onDbSuccess);
+            }
+            
+            //this is for the database. takes just the transaction object as a parameter. why does it go directly here? look up order of called functions in javascript
+            function getDbNotes(tx){
+	        	alert('inside getDbNotes');
+	        	//this is a Sql statement that creates a table with 5 columns, as defined within the parentheses
+	        	tx.executeSql("CREATE TABLE IF NOT EXISTS NOTES (notetitle, notedetail, imagesource, notelat, notelon)");
+	        	//this is a Sql statement that selects notes and takes parameters of an empty array and runs functions based on error or success
+	        	tx.executeSql("SELECT * FROM NOTES", [], onSelectNotesSuccess, onDbError);
+            }
+            
+            //this is for the database. if there is a success, if saves the results to the global variable and appends to a note list
+            function onSelectNotesSuccess(tx, results) {
+	        	dbresults = results;
+	        	var len = results.rows.length;
+	        	for(var i = 0; i<len; i++) {
+		        	$("#notelist").append("<li><a href=#newnote onclick='itemindex=" + i + ";'>" + results.rows.item(i).notetitle + "</a></li>");
+		        }
+		        $("#notelist").listview("refresh");
+		    }
+		    
+		    //this is a Sql statement that saves the note to the database
+		    function saveNote(tx) {
+			    tx.executeSql("INSERT INTO NOTES (notetitle, notedetail, imagesource, notelat, notelon) VALUES (?, ?, ?, ?, ?)",[notedata.notetitle, notedata.notedetail, notedata.imagesource, notedata.notelat, notedata.notelon]);
 			}
-        }
-			
-		var onGeoSuccess = function (position) {
-            console.log('success')
-			lat = position.coords.latitude;
-			lon = position.coords.longitude;
-			var currentposition = new google.maps.LatLng(lat,lon);
-			
-			var mapoptions = {
-				zoom: 12,
-				center: currentposition,
-				mapTypeId: google.maps.MapTypeId.ROADMAP
-			};
-			
-			var map = new google.maps.Map(document.getElementById("map"), mapoptions);
-
-
-			var marker = new google.maps.Marker({
-					position: currentposition,
-					map: map
-			});
-		}
-		
-		var onGeoError = function (error) {
-            console.log('error')
-			if(error == 1) {
-				alert('Turn on geolocation services, please.');	
-			}
-		}
-	</script>
-	
-</head>
-
-
-
-<body onload="init()">
-
-	<!--you can either spec different pages within the body, like here, or make separate html files for each-->
-	<!--this is the main page-->
-	<div data-role="page" id="main">
-	<div data-role="header" class="logo">
-		<img src="img/logo.png" />
-	</div>
-	
-	<div data-role="content">
-		<ul id="notelist" data-role="listview">
-		</ul>
-		<a href="#newnote" data-role="button" data-icon="plus">New Note</a>
-	</div>
-	
-	<div data-role="footer" data-theme="c">
-		<h2 class="offline">Offline Mode</h2>
-	</div>
-	
-	</div>
-	
-	<!--this is the 'new note' page-->
-	<div data-role="page" id="newnote">
-	<div data-role="header" class="logo">
-		<img src="img/logo.png" />
-	</div>
-	
-	<div id="notedetailcontent" data-role="content">
-	</div>
-	<div data-role="footer" data-theme="c">
-		<p>SnapNote!</p>
-	</div>
-	</div>
-	
-</body>
+                                
+            //executed if there geolocation is available; sets variables from the googlemaps api
+            function onGeoSuccess(position) {
+            	lat = position.coords.latitude;
+                lon = position.coords.longitude;
+                var currentposition = new google.maps.LatLng(lat,lon);
+                                    
+                var mapoptions = {
+                	zoom: 12,
+                    center: currentposition,
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                };
+                                    
+                var map = new google.maps.Map(document.getElementById("map"), mapoptions);                            
+                var marker = new google.maps.Marker({
+                	position: currentposition,
+                    map: map
+                });
+            }
+                                
+            //executed as the camera is called.... find out more about how this works
+            function onCameraSuccess(imageURI) {
+            	$("#noteimage").attr("src", imageURI);
+                $("#noteimage").css("display","block");
+            }
+            
+            //this is tied to the database and performed if there is a success. takes 2 parameters: the transaction and its results
+            function onDbSuccess(tx, results){
+	            console.log('Database call successful');
+            }
+                                
+            //executed if there geolocation is not available; sends popup to the user telling them to turn on GPS stuff
+            function onGeoError(error) {
+            	if( error == 1) {
+                	alert('Turn on Geolocation services.');
+                }
+            }
+                                
+            //this is tied to the camera somehow
+            function onError(message) {
+            	alert(message);
+            }
+            
+            //this is tied to the database and performed if there is an error
+            function onDbError(error){
+	            alert("Database error" + error.message);
+            }
+    </script>
+    </head>
+    
+    <!--this begins the body layout, which is called on load... also includes two pages-->	
+    <body onload="init()">
+    	<!--you can either spec different pages within the body, like here, or make separate html files for each-->
+    	<!--this is the main page-->
+        <div data-role="page" id="main">
+            <div data-role="header" class="logo">
+                <img src="img/logo.png" />
+            </div>
+        
+            <div data-role="content">
+        		<ul id="notelist" data-role="listview"></ul>      
+        		<a href="#newnote" data-role="button" data-icon="plus">New Note</a>
+            </div>
+            
+            <div data-role="footer" data-theme="c">
+        		<h2 class="offline">Offline Mode</h2>
+        	</div>   
+        </div>
+        
+        <!--this is the new note page-->
+        <div data-role="page" id="newnote">
+            <div data-role="header" class="logo">
+                <img src="img/logo.png" />
+            </div>
+            <div id="notedetailcontent" data-role="content">
+            </div>
+            <div data-role="footer" data-theme="c">
+                <p>//V1.0//</p>
+            </div>
+        </div>
+        </div>
+    
+    </body>
 </html>
-	
