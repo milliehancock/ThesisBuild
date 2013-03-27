@@ -11,7 +11,7 @@
         <title>Our Application</title>
         
         <!--stylesheet links-->
-        <link rel="stylesheet" href="css/themes/default/jquery.mobile-1.2.0.css">
+        <link rel="stylesheet" href="css/themes/custom/Digit_example1.css">
         <link rel="stylesheet" href="css/main.css">
         
         <!--script file references-->
@@ -44,6 +44,14 @@
 		            $("#notedetailcontent").html(html);
 		        }); 
                 
+                 //NEED HELP WITH THIS, HOW TO ADD BACK FUNCTIONALITY BETWEEN PAGES
+                 //if taps the logo, brings you back to the home page
+                 $(".logo").tap("pageshow", function(){
+                	//navigator.geolocation.getCurrentPosition(onGeoSuccess, onGeoError);
+                	//if(itemindex >= 0){
+	                	$("main").css("display", "block");
+                	//}
+                });
                 //listen for the new note, find geolocation, and update position of the map navigator to current location -- also executes two functions to see if geolocation is available
                 $("#newnote").live("pageshow", function(){
                 	navigator.geolocation.getCurrentPosition(onGeoSuccess, onGeoError);
